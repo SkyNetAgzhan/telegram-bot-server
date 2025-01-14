@@ -1,0 +1,53 @@
+select * from answers
+select * from users
+drop table answers
+
+INSERT INTO answers (quest, isnode, answer, answertype, parentid, "createdAt", "updatedAt")
+VALUES
+('start', true, 'start', NULL, NULL, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+('русский', true, 'русский', NULL, 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+('Қазақша', true, NULL, NULL, 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+('Информация о санаториях', true, NULL, NULL, 2, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+('Санаторий - профилакторий имени Сакена Сейфуллина (Акмолинская область)', false, 'Сейфуллина.docx', 'file', 4, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+('Санаторий "Ақ-су Демі" (Туркестанская область)', false, 'Ақcу Демі.docx', 'file', 4, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+('Санаторий "Ақжайық - шипа" (Туркестанская область, Сарыагашский район)', false, 'Ақжайық шипа.docx', 'file', 4, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+('Квоты на санатории', true, NULL, NULL, 2, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+('НЖС-1 Акмола', false, 'квоты_1.xlsx', 'file', 8, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+('НЖС-2 Костанай', false, 'квоты_2.xlsx', 'file', 8, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+('НЖС-3 Павлодар', false, 'квоты_3.xlsx', 'file', 8, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+('НЖС-4 Караганда', false, 'квоты_4.xlsx', 'file', 8, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+('НЖС-6 Семей', false, 'квоты_6.xlsx', 'file', 8, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+('НЖС-7 Алматы', false, 'квоты_7.xlsx', 'file', 8, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+('НЖС-8 Жамбыл', false, 'квоты_8.xlsx', 'file', 8, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+('НЖС-9 Шымкент', false, 'квоты_9.xlsx', 'file', 8, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+('НЖС_10 Кызылорда', false, 'квоты_10.xlsx', 'file', 8, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+('НЖС_11 Актобе', false, 'квоты_11.xlsx', 'file', 8, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+('НЖС_13 Атырау', false, 'квоты_13.xlsx', 'file', 8, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+('НЖС_14 Мангистау', false, 'квоты_14.xlsx', 'file', 8, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+('ИЖУ', false, 'квоты_15.xlsx', 'file', 8, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+('ЛЖС', false, 'квоты_16.xlsx', 'file', 8, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+('ЦЖС', false, 'квоты_17.xlsx', 'file', 8, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+('Шипажайлар туралы ақпарат', true, NULL, NULL, 3, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+('Сәкен Сейфуллин атындағы Санаторий - профилакторий (Ақмола облысы)', false, 'Сейфуллина-каз.docx', 'file', 24, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+('"Ақ-су Демі" шипажайы (Түркістан обласы)', false, 'Ақcу Демі каз.docx', 'file', 24, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+('"Ақжайық - шипа" шипажайы (Түркістан обласы, Сарыағаш ауданы)', false, 'Ақжайық шипа-каз.docx', 'file', 24, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+('Шипажайдағы квота', true, NULL, NULL, 3, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+('НЖС-1 Ақмола', false, 'квоты_1.xlsx', 'file', 28, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+('НЖС-2 Қостанай', false, 'квоты_2.xlsx', 'file', 28, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+('НЖС-3 Павлодар ', false, 'квоты_3.xlsx', 'file', 28, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+('НЖС-4 Қарағанды', false, 'квоты_4.xlsx', 'file', 28, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+('НЖС-6 Семей ', false, 'квоты_6.xlsx', 'file', 28, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+('НЖС-7 Алматы ', false, 'квоты_7.xlsx', 'file', 28, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+('НЖС-8 Жамбыл ', false, 'квоты_8.xlsx', 'file', 28, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+('НЖС-9 Шымкент ', false, 'квоты_9.xlsx', 'file', 28, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+('НЖС-10 Қызылорда', false, 'квоты_10.xlsx', 'file', 28, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+('НЖС-11 Ақтөбе', false, 'квоты_11.xlsx', 'file', 28, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+('НЖС-13 Атырау ', false, 'квоты_13.xlsx', 'file', 28, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+('НЖС-14 Маңғыстау', false, 'квоты_14.xlsx', 'file', 28, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+('ИЖУ ', false, 'квоты_15.xlsx', 'file', 28, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+('ЛЖС ', false, 'квоты_16.xlsx', 'file', 28, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+('ЦЖС ', false, 'квоты_17.xlsx', 'file', 28, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
+
+
+SELECT setval(pg_get_serial_sequence('answers', 'id'), coalesce(max(id), 1)) FROM answers;
+
