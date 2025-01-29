@@ -17,7 +17,36 @@ const Answer = sequelize.define('answer', {
     parentid: { type: DataTypes.INTEGER, allowNull: true }
 });
 
+const Poll = sequelize.define('poll', {
+    id: {type: DataTypes.INTEGER, primaryKey: true, autoIncrement: true},
+    questionRu: {type: DataTypes.STRING, allowNull:false},
+    questionKz: {type: DataTypes.STRING, allowNull: false},
+});
+
+const PollOption = sequelize.define('poll_option', {
+    id: {type:DataTypes.INTEGER, primaryKey: true, autoIncrement: true},
+    pollId: {type:DataTypes.INTEGER, allowNull: false},
+    optionTextRu: {type: DataTypes.STRING, allowNull: false},
+    optionTextKz: {type: DataTypes.STRING, allowNull: false},
+});
+
+const PollVote = sequelize.define('poll_vote', {
+    id: { type: DataTypes.INTEGER, primaryKey: true, autoIncrement: true },
+    pollId: { type: DataTypes.INTEGER, allowNull: false },
+    optionId: { type: DataTypes.INTEGER, allowNull: false },
+    userId: { type: DataTypes.INTEGER, allowNull: false},
+});
+
+Poll.hasMany(PollOption, { foreignKey: 'pollId', onDelete: 'CASCADE' });
+PollOption.belongsTo(Poll, { foreignKey: 'pollId' });
+
+PollOption.hasMany(PollVote, { foreignKey: 'optionId', onDelete: 'CASCADE' });
+PollVote.belongsTo(PollOption, { foreignKey: 'optionId' });
+
 module.exports = {
     User,
-    Answer
+    Answer,
+    Poll,
+    PollOption,
+    PollVote
 };
