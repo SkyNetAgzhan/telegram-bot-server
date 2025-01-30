@@ -17,6 +17,19 @@ const Answer = sequelize.define('answer', {
     parentid: { type: DataTypes.INTEGER, allowNull: true }
 });
 
+// Родитель -> Дети
+Answer.hasMany(Answer, {
+    foreignKey: 'parentid',
+    as: 'children',
+    onDelete: 'CASCADE'
+});
+
+// Ребёнок -> Родитель
+Answer.belongsTo(Answer, {
+    foreignKey: 'parentid',
+    as: 'parent'
+});
+
 const Poll = sequelize.define('poll', {
     id: {type: DataTypes.INTEGER, primaryKey: true, autoIncrement: true},
     questionRu: {type: DataTypes.STRING, allowNull:false},

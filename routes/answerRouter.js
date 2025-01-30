@@ -7,6 +7,8 @@ router.post('/create', checkRole('ADMIN'), answerController.create);
 router.get('/', answerController.getAll);
 router.get('/:id', answerController.getOne);
 router.delete('/:id', checkRole('ADMIN'), answerController.delete);
+
+// Свапы
 router.put('/swapCategoriesAndSubs', answerController.swapCategoriesAndSubs);
 router.put('/swapSubs', answerController.swapSubs);
 
