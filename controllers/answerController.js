@@ -175,34 +175,62 @@ class AnswerController {
         const { subIdA, subIdB } = req.body;
         const t = await sequelize.transaction();
         try {
+            // 1) Получаем сами записи
             const subA = await Answer.findByPk(subIdA, { transaction: t });
             const subB = await Answer.findByPk(subIdB, { transaction: t });
-
             if (!subA || !subB) {
                 await t.rollback();
                 return next(ApiError.badRequest('Одна из подкатегорий не найдена.'));
             }
-
-            // 1) subA => -9999
-            await Answer.update({ id: -9999 }, { where: { id: subIdA }, transaction: t });
-            // 2) subB => subIdA
-            await Answer.update({ id: subIdA }, { where: { id: subIdB }, transaction: t });
-            // 3) -9999 => subIdB
-            await Answer.update({ id: subIdB }, { where: { id: -9999 }, transaction: t });
-
-            // Аналогично, при желании можно «переназначить» их детей (where parentid=subIdA => subIdB?), 
-            // но обычно subIdA/B — документы или одиночные подкатегории.
-            // Если нужно менять и их детей — пишите аналогичный блок updates.
-
+    
+            // 2) Меняем ID:
+            //   subA => -9999,
+            //   subB => subA,
+            //   -9999 => subB
+            await Answer.update(
+                { id: -9999 },
+                { where: { id: subIdA }, transaction: t }
+            );
+            await Answer.update(
+                { id: subIdA },
+                { where: { id: subIdB }, transaction: t }
+            );
+            await Answer.update(
+                { id: subIdB },
+                { where: { id: -9999 }, transaction: t }
+            );
+    
+            // 3) Меняем parentid у прямых детей:
+            //   Всё, что ссылалось на subA => теперь subB
+            //   Всё, что ссылалось на subB => теперь subA
+            //   (по аналогии с swapCategoriesAndSubs)
+            const TEMP_PARENT = -9999;
+    
+            // parentid=subA => TEMP
+            await Answer.update(
+                { parentid: TEMP_PARENT },
+                { where: { parentid: subIdA }, transaction: t }
+            );
+            // parentid=subB => subA
+            await Answer.update(
+                { parentid: subIdA },
+                { where: { parentid: subIdB }, transaction: t }
+            );
+            // parentid=TEMP => subB
+            await Answer.update(
+                { parentid: subIdB },
+                { where: { parentid: TEMP_PARENT }, transaction: t }
+            );
+    
             await t.commit();
             return res.json({
-                message: `Подкатегории #${subIdA} и #${subIdB} успешно поменялись местами!`
+                message: `Подкатегории #${subIdA} и #${subIdB} (и их дети) успешно поменялись местами!`
             });
         } catch (err) {
             await t.rollback();
             return next(ApiError.internal('Ошибка при свапе подкатегорий: ' + err.message));
         }
-    }
+    }    
 }
 
 module.exports = new AnswerController();
