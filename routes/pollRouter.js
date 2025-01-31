@@ -1,11 +1,12 @@
 const Router = require('express');
 const router = new Router();
 const pollController = require('../controllers/pollController');
+const checkRole = require('../middleware/checkRoleMiddleware.js');
 
-router.post('/create', pollController.createPoll);
+router.post('/create',checkRole('ADMIN'), pollController.createPoll);
 router.get('/', pollController.getAllPolls);
 router.post('/vote', pollController.vote);
 router.get('/:id/results', pollController.getPollResults);
-router.delete('/:id', pollController.deletePoll);
+router.delete('/:id', checkRole('ADMIN'), pollController.deletePoll);
 
 module.exports = router;

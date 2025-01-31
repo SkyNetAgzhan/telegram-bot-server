@@ -1,17 +1,20 @@
 const fs = require('fs');
-const { Answer } = require('../models/models');
-const ApiError = require('../error/ApiError');
 const path = require('path');
 const iconv = require('iconv-lite');
+const ApiError = require('../error/ApiError');
 const sequelize = require('../db');
+const { Answer } = require('../models/models');
 
 class AnswerController {
+    /**
+     * Создаёт запись (категорию или документ) в таблице answers.
+     */
     async create(req, res, next) {
-        console.log('Create answer route hit');
         try {
             const { quest, isnode, answertype, parentid } = req.body;
             let answerFile = req.files?.answer;
 
+            // Проверка, нет ли уже такой записи
             const existingAnswer = await Answer.findOne({ where: { quest } });
             if (existingAnswer) {
                 return next(ApiError.badRequest("Названный документ уже существует"));
@@ -19,130 +22,155 @@ class AnswerController {
 
             let fileName = null;
             if (answerFile) {
-                const extension = path.extname(answerFile.name);
-                // Конвертация имени файла в UTF-8 (если нужно)
+                // Конвертируем имя, если нужно
                 fileName = iconv.decode(Buffer.from(answerFile.name, 'latin1'), 'utf8');
                 const filePath = path.resolve(__dirname, '..', '..', 'files', fileName);
-                answerFile.mv(filePath);
+                await answerFile.mv(filePath);
             }
 
-            const answers = await Answer.create({
+            // Создаём запись в БД
+            const newAnswer = await Answer.create({
                 quest,
                 isnode,
                 answer: fileName || quest,
                 answertype,
                 parentid
             });
-            return res.json(answers);
+            return res.json(newAnswer);
         } catch (e) {
-            next(ApiError.badRequest(e.message));
+            console.error('Create Error:', e);
+            return next(ApiError.badRequest(e.message));
         }
     }
 
-    async getAll(req, res) {
-        let answers = await Answer.findAndCountAll({
-            order: [['id', 'ASC']], // сортировка по ID (возрастание)
-        });
-        return res.json(answers);
+    /**
+     * Возвращает все записи (с подсчётом).
+     */
+    async getAll(req, res, next) {
+        try {
+            const answers = await Answer.findAndCountAll({
+                order: [['id','ASC']]
+            });
+            return res.json(answers); // { rows: [...], count: N }
+        } catch (err) {
+            return next(ApiError.internal(err.message));
+        }
     }
 
-    async getOne(req, res) {
-        const { id } = req.params;
-        const answer = await Answer.findOne({ where: { id } });
-        return res.json(answer);
+    /**
+     * Возвращает одну запись по ID.
+     */
+    async getOne(req, res, next) {
+        try {
+            const { id } = req.params;
+            const found = await Answer.findByPk(id);
+            if (!found) {
+                return next(ApiError.badRequest(`Запись #${id} не найдена`));
+            }
+            return res.json(found);
+        } catch (err) {
+            return next(ApiError.internal(err.message));
+        }
     }
 
+    /**
+     * Удаление записи (категории или документа).
+     */
     async delete(req, res, next) {
         try {
             const { id } = req.params;
-            const category = await Answer.findByPk(id);
-
-            if (!category) {
-                return next(ApiError.badRequest("Категория не найдена"));
+            const record = await Answer.findByPk(id);
+            if (!record) {
+                return next(ApiError.badRequest('Запись не найдена'));
             }
 
-            // Удаляем все подчинённые записи (подкатегории), если isnode=false, и файлы
-            // (Этот код только для одного уровня, если хотите рекурсивно — нужна другая логика)
-            const answersToDelete = await Answer.findAll({ where: { parentid: id } });
-            for (const answer of answersToDelete) {
-                const filePath = path.resolve(__dirname, '..', '..', 'files', answer.answer);
+            // Если это файл, удалим его физически
+            if (!record.isnode && record.answer) {
+                const filePath = path.resolve(__dirname, '..', '..', 'files', record.answer);
                 if (fs.existsSync(filePath)) {
                     fs.unlinkSync(filePath);
                 }
-                await answer.destroy();
             }
 
-            // Теперь удаляем саму категорию
-            await category.destroy();
-            return res.json({ message: 'Категория и связанные ряды удалены' });
-        } catch (error) {
-            console.error('Delete Error:', error.message);
-            next(ApiError.internal('Ошибка при удалении категории'));
+            // Можно также удалить всех «детей» (если isnode=true),
+            // но это зависит от вашей логики. 
+            // Сейчас просто удаляем саму запись:
+            await record.destroy();
+            return res.json({ message: `Запись #${id} удалена` });
+        } catch (err) {
+            console.error('Delete Error:', err);
+            return next(ApiError.internal(err.message));
         }
     }
 
+    /**
+     * Свап двух «категорий» (idA, idB) + их прямых детей
+     * (то есть у кого parentid=idA, станет parentid=idB, и наоборот).
+     * Меняется сам ID категорий (A->B, B->A).
+     */
     async swapCategoriesAndSubs(req, res, next) {
         const { idA, idB } = req.body;
         const t = await sequelize.transaction();
         try {
             const catA = await Answer.findByPk(idA, { transaction: t });
             const catB = await Answer.findByPk(idB, { transaction: t });
-
             if (!catA || !catB) {
                 await t.rollback();
                 return next(ApiError.badRequest('Одна из категорий не найдена.'));
             }
 
-            if (!catA.isnode || !catB.isnode) {
-                await t.rollback();
-                return next(ApiError.badRequest('Оба id должны быть категориями (isnode = true).'));
-            }
-
-            // Шаги свапа: временно освобождаем A
+            // 1) Освобождаем A => -9999
             await Answer.update(
                 { id: -9999 },
                 { where: { id: idA }, transaction: t }
             );
-            // B -> A
+            // 2) B => A
             await Answer.update(
                 { id: idA },
                 { where: { id: idB }, transaction: t }
             );
-            // -9999 -> B
+            // 3) -9999 => B
             await Answer.update(
                 { id: idB },
                 { where: { id: -9999 }, transaction: t }
             );
 
-            // Свап «детей»: все subA -> B и subB -> A
+            // 4) Меняем parentid у всех, кто ссылался на A => теперь B,
+            //    и у всех, кто ссылался на B => теперь A.
+            //    ВАЖНО: убираем любое условие isnode, 
+            //    чтобы затронуть и «подкатегории», и «документы».
             const TEMP_PARENT = -9999;
 
-            // Всё, что указывало на idA (старый), переносим на TEMP_PARENT
+            // Всё, что указывало на old-A => TEMP
             await Answer.update(
                 { parentid: TEMP_PARENT },
-                { where: { parentid: idA, isnode: false }, transaction: t }
+                { where: { parentid: idA }, transaction: t }
             );
-            // Всё, что указывало на idB (старый), ставим на idA
+            // Всё, что указывало на old-B => A
             await Answer.update(
                 { parentid: idA },
-                { where: { parentid: idB, isnode: false }, transaction: t }
+                { where: { parentid: idB }, transaction: t }
             );
-            // Всё, что указывало на TEMP_PARENT, ставим на idB
+            // Всё, что указывало на TEMP => B
             await Answer.update(
                 { parentid: idB },
-                { where: { parentid: TEMP_PARENT, isnode: false }, transaction: t }
+                { where: { parentid: TEMP_PARENT }, transaction: t }
             );
 
             await t.commit();
             return res.json({
-                message: `Категории #${idA} и #${idB} (и их подкатегории) успешно поменялись местами!`
+                message: `Категории #${idA} и #${idB} (и их прямые дети) успешно поменялись местами`
             });
         } catch (err) {
             await t.rollback();
-            return next(ApiError.internal('Ошибка при свапе: ' + err.message));
+            return next(ApiError.internal('Ошибка при свапе категорий: ' + err.message));
         }
     }
 
+    /**
+     * Свап двух «подкатегорий» (subIdA, subIdB) — 
+     * просто меняем их ID и всё, для «прямого» обмена.
+     */
     async swapSubs(req, res, next) {
         const { subIdA, subIdB } = req.body;
         const t = await sequelize.transaction();
@@ -155,25 +183,16 @@ class AnswerController {
                 return next(ApiError.badRequest('Одна из подкатегорий не найдена.'));
             }
 
-            if (subA.isnode || subB.isnode) {
-                await t.rollback();
-                return next(ApiError.badRequest('Обе записи должны быть подкатегориями!'));
-            }
+            // 1) subA => -9999
+            await Answer.update({ id: -9999 }, { where: { id: subIdA }, transaction: t });
+            // 2) subB => subIdA
+            await Answer.update({ id: subIdA }, { where: { id: subIdB }, transaction: t });
+            // 3) -9999 => subIdB
+            await Answer.update({ id: subIdB }, { where: { id: -9999 }, transaction: t });
 
-            const TEMP_ID = -9999;
-
-            await Answer.update(
-                { id: TEMP_ID },
-                { where: { id: subIdA }, transaction: t }
-            );
-            await Answer.update(
-                { id: subIdA },
-                { where: { id: subIdB }, transaction: t }
-            );
-            await Answer.update(
-                { id: subIdB },
-                { where: { id: TEMP_ID }, transaction: t }
-            );
+            // Аналогично, при желании можно «переназначить» их детей (where parentid=subIdA => subIdB?), 
+            // но обычно subIdA/B — документы или одиночные подкатегории.
+            // Если нужно менять и их детей — пишите аналогичный блок updates.
 
             await t.commit();
             return res.json({
@@ -181,7 +200,7 @@ class AnswerController {
             });
         } catch (err) {
             await t.rollback();
-            return next(ApiError.internal('Ошибка при свапе: ' + err.message));
+            return next(ApiError.internal('Ошибка при свапе подкатегорий: ' + err.message));
         }
     }
 }
