@@ -62,11 +62,20 @@ const BotVisitor = sequelize.define('bot_visitor', {
     visitedAt: { type: DataTypes.DATE, allowNull: false, defaultValue: DataTypes.NOW }
 });
 
+const News = sequelize.define('news', {
+    id: { type: DataTypes.INTEGER, primaryKey: true, autoIncrement: true },
+    topic: { type: DataTypes.STRING, allowNull: false },
+    date: { type: DataTypes.DATE, allowNull: false },
+    text: { type: DataTypes.TEXT, allowNull: false },
+    file: { type: DataTypes.STRING, allowNull: true }
+});
+
 module.exports = {
     User,
     Answer,
     Poll,
     PollOption,
     PollVote,
-    BotVisitor
+    BotVisitor,
+    News
 };
