@@ -56,10 +56,17 @@ PollOption.belongsTo(Poll, { foreignKey: 'pollId' });
 PollOption.hasMany(PollVote, { foreignKey: 'optionId', onDelete: 'CASCADE' });
 PollVote.belongsTo(PollOption, { foreignKey: 'optionId' });
 
+const BotVisitor = sequelize.define('bot_visitor', {
+    id: { type: DataTypes.INTEGER, primaryKey: true, autoIncrement: true },
+    userId: { type: DataTypes.BIGINT, allowNull: false },
+    visitedAt: { type: DataTypes.DATE, allowNull: false, defaultValue: DataTypes.NOW }
+});
+
 module.exports = {
     User,
     Answer,
     Poll,
     PollOption,
-    PollVote
+    PollVote,
+    BotVisitor
 };

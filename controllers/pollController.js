@@ -21,8 +21,7 @@ class PollController {
       }
 
       return res.json({ message: 'Голосование успешно создано.', pollId: poll.id });
-
-    }catch(err){
+    } catch(err){
       return next(ApiError.internal(err.message));
     }
   }
@@ -45,20 +44,36 @@ class PollController {
   async vote(req, res, next){
     try {
       const { pollId, optionId, userId } = req.body;
-
       const existingVote = await PollVote.findOne({ where: { pollId, userId } });
       if (existingVote){
         return next(ApiError.badRequest('Вы уже проголосовали в этом опросе!'));
       }
-
       await PollVote.create({ pollId, optionId, userId });
       return res.json({ message:'Голос успешно засчитан' });
-    }catch(error){
+    } catch(error){
       return next(ApiError.internal(error.message));
     }
   }
 
-  async getPollResults(req, res){
+  async getPollById(req, res, next) {
+    try {
+      const { id } = req.params;
+      const poll = await Poll.findByPk(id, {
+        include: [{ model: PollOption, as: 'poll_options' }]
+      });
+
+      if (!poll || !poll.poll_options) {
+        return res.status(404).json({ message: `Опрос #${id} не найден или не содержит вариантов ответов.` });
+      }
+
+      return res.json(poll);
+    } catch (err) {
+      console.error('Ошибка при получении опроса:', err);
+      return next(ApiError.internal(err.message));
+    }
+  }
+
+  async getPollResults(req, res, next){
     try{
       const { id } = req.params;
       const poll = await Poll.findByPk(id, {
@@ -93,16 +108,12 @@ class PollController {
   async deletePoll(req, res, next) {
     try{
       const { id } = req.params;
-
       await PollOption.destroy({ where: { pollId: id } });
       await PollVote.destroy({ where: { pollId: id }});
-
       const deletedPoll = await Poll.destroy({ where: { id } });
-
       if(!deletedPoll) {
         return next(ApiError.notFound('Голосование не найдено!'));
       }
-
       return res.json({ message: 'Голосование успешно удалено.' });
     }catch(err){
       return next(ApiError.internal(err.message));

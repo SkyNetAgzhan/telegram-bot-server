@@ -8,5 +8,6 @@ router.get('/', pollController.getAllPolls);
 router.post('/vote', pollController.vote);
 router.get('/:id/results', pollController.getPollResults);
 router.delete('/:id', checkRole('ADMIN'), pollController.deletePoll);
+router.get('/:id', pollController.getPollById);
 
 module.exports = router;
