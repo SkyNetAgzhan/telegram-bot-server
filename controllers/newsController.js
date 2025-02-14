@@ -9,6 +9,7 @@ class NewsController {
     try {
       const { topic, date, text } = req.body;
       let fileData = req.files?.file;
+      console.log("Получен файл: ", fileData);
 
       if (!topic|| !date || !text ){
         return next(ApiError.badRequest("Все поля (тема, дата, текст) обязательны"));
@@ -17,8 +18,10 @@ class NewsController {
       let fileName = null;
       if(fileData){
         fileName = iconv.decode(Buffer.from(fileData.name, 'latin1'), 'utf8');
-        const filePath = path.resolve(__dirname, '..', 'files', fileName);
+        const filePath = path.resolve(__dirname, '..' ,'..', 'files', fileName);
+        console.log(`Сохраняем файл по пути: ${filePath}`);
         await fileData.mv(filePath);
+        console.log(`Файл успешно сохранён по пути: ${filePath}`);        
       }
 
       const news = await News.create({ topic, date, text, file: fileName });
@@ -58,13 +61,13 @@ class NewsController {
 
       const newsItem = await News.findByPk(id);
       if(!newsItem){
-        return next(ApiError.notFound("Еовость не найдена"));
+        return next(ApiError.notFound("Новость не найдена"));
       }
       
       let fileName = newsItem.file;
       if(fileData){
         fileName = iconv.decode(Buffer.from(fileData.name, 'latin1'), 'utf8');
-        const filePath = path.resolve(__dirname, '..', 'files', fileName);
+        const filePath = path.resolve(__dirname, '..', '..', 'files', fileName);
         await fileData.mv(filePath);
       }
 
